@@ -136,6 +136,7 @@ All IDs are UUIDs and all timestamps are UTC. Catalog entities are archived (`ar
 
 - Services listen on all interfaces (app.listen(PORT)), so ports 3001–3004 bypass Kong. Fix in the JWT/user_id step: bind via a HOST env var (127.0.0.1 on the host; 0.0.0.0 in containers).
 - packages/contracts is consumed from dist/ but nothing builds it. Fix in the first step that depends on @tt/contracts: build it before dev/typecheck, and use --filter @tt/<svc>... in Dockerfiles.
+- `requestTimeout: 2000` is set on each service's shared kafkajs client so `/health` can't hang. Fix in the first step that adds producers/consumers: give health its own client or admin config, so group joins and large produces aren't cut off at 2 s.
 
 ## Rules for agents
 
