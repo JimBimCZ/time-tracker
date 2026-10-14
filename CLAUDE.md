@@ -25,6 +25,7 @@ This is a system-design exercise. It is deliberately overbuilt as scalable micro
 - Run everything (4 services + web, hot reload): `pnpm dev`. One service: `pnpm --filter @tt/<name> dev`.
 - Health through Kong: `curl localhost:8000/<auth|catalog|tracking|reporting>/health`
 - Checks: `pnpm typecheck`, `pnpm lint`
+- E2E smoke (boots infra, services and web; Chromium): `pnpm e2e`. First time: `pnpm --filter @tt/e2e exec playwright install chromium`.
 - Ports: services 3001–3004 (auth, catalog, tracking, reporting) · web 5173 · Kong 8000 · Postgres 5433–5436 · Kafka 9092 · Redis 6379
 - New dependencies: pin exact versions. pnpm fails install on unreviewed install scripts; decide each one in `allowBuilds` in `pnpm-workspace.yaml`.
 
