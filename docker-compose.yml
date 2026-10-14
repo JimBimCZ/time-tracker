@@ -1,0 +1,95 @@
+x-pg-health: &pg-health
+  interval: 5s
+  timeout: 3s
+  retries: 10
+
+services:
+  pg-auth:
+    image: postgres:18.6-alpine
+    environment: { POSTGRES_USER: auth, POSTGRES_PASSWORD: auth, POSTGRES_DB: auth }
+    ports: ["127.0.0.1:5433:5432"]
+    volumes: [pg-auth:/var/lib/postgresql]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U auth -d auth"], <<: *pg-health }
+
+  pg-catalog:
+    image: postgres:18.6-alpine
+    environment: { POSTGRES_USER: catalog, POSTGRES_PASSWORD: catalog, POSTGRES_DB: catalog }
+    ports: ["127.0.0.1:5434:5432"]
+    volumes: [pg-catalog:/var/lib/postgresql]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U catalog -d catalog"], <<: *pg-health }
+
+  pg-tracking:
+    image: postgres:18.6-alpine
+    environment: { POSTGRES_USER: tracking, POSTGRES_PASSWORD: tracking, POSTGRES_DB: tracking }
+    ports: ["127.0.0.1:5435:5432"]
+    volumes: [pg-tracking:/var/lib/postgresql]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U tracking -d tracking"], <<: *pg-health }
+
+  pg-reporting:
+    image: postgres:18.6-alpine
+    environment: { POSTGRES_USER: reporting, POSTGRES_PASSWORD: reporting, POSTGRES_DB: reporting }
+    ports: ["127.0.0.1:5436:5432"]
+    volumes: [pg-reporting:/var/lib/postgresql]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U reporting -d reporting"], <<: *pg-health }
+
+  redis:
+    image: redis:8.10.2-alpine
+    ports: ["127.0.0.1:6379:6379"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 3s, retries: 10 }
+
+  kafka:
+    image: apache/kafka:4.3.1
+    ports: ["127.0.0.1:9092:9092"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:29092,EXTERNAL://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_NUM_PARTITIONS: 6
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+
+  # One-shot; run by `pnpm infra:up`. The profile keeps it out of `up --wait`.
+  kafka-init:
+    image: apache/kafka:4.3.1
+    profiles: [init]
+    depends_on: { kafka: { condition: service_healthy } }
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for t in user.events catalog.events timer.commands timer.commands.dlq tracking.events; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic "$$t" --partitions 6 --replication-factor 1 || exit 1
+        done
+
+  kong:
+    image: kong:3.9.2
+    depends_on: { redis: { condition: service_healthy } }
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+    volumes: ["./infra/kong/kong.yml:/kong/kong.yml:ro"]
+    ports: ["127.0.0.1:8000:8000", "127.0.0.1:8001:8001"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    healthcheck: { test: ["CMD", "kong", "health"], interval: 5s, timeout: 5s, retries: 10 }
+
+volumes:
+  pg-auth:
+  pg-catalog:
+  pg-tracking:
+  pg-reporting:

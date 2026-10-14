@@ -1,0 +1,25 @@
+_format_version: "3.0"
+
+services:
+  - name: auth
+    url: http://host.docker.internal:3001
+    routes: [{ name: auth, paths: [/auth], strip_path: true }]
+  - name: catalog
+    url: http://host.docker.internal:3002
+    routes: [{ name: catalog, paths: [/catalog], strip_path: true }]
+  - name: tracking
+    url: http://host.docker.internal:3003
+    routes: [{ name: tracking, paths: [/tracking], strip_path: true }]
+  - name: reporting
+    url: http://host.docker.internal:3004
+    routes: [{ name: reporting, paths: [/reporting], strip_path: true }]
+
+plugins:
+  - name: rate-limiting
+    config:
+      minute: 100
+      limit_by: ip
+      policy: redis
+      redis:
+        host: redis
+        port: 6379
