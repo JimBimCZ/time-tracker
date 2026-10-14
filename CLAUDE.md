@@ -18,6 +18,16 @@ This is a system-design exercise. It is deliberately overbuilt as scalable micro
 - **Repo:** monorepo using pnpm workspaces.
 - **Runtime:** Docker Compose for development. Local Kubernetes (kind/k3d) later for the scaling exercise. The hourly batch becomes a CronJob there.
 
+## Commands
+
+- First run: `pnpm install && for s in services/*; do cp -n $s/.env.example $s/.env; done`
+- Infra (Kafka, 4× Postgres, Redis, Kong): `pnpm infra:up` / `pnpm infra:down`. `infra:up` also creates the Kafka topics; it's safe to re-run.
+- Run everything (4 services + web, hot reload): `pnpm dev`. One service: `pnpm --filter @tt/<name> dev`.
+- Health through Kong: `curl localhost:8000/<auth|catalog|tracking|reporting>/health`
+- Checks: `pnpm typecheck`, `pnpm lint`
+- Ports: services 3001–3004 (auth, catalog, tracking, reporting) · web 5173 · Kong 8000 · Postgres 5433–5436 · Kafka 9092 · Redis 6379
+- New dependencies: pin exact versions. pnpm fails install on unreviewed install scripts; decide each one in `allowBuilds` in `pnpm-workspace.yaml`.
+
 ## Architecture
 
 Full diagram: `assets/system-design.md` (Mermaid).
