@@ -11,6 +11,7 @@ for (const svc of ['auth', 'catalog', 'tracking', 'reporting']) {
 test('Kong does not match look-alike prefixes', async ({ request }) => {
   const res = await request.get('/authx/health');
   expect(res.status()).toBe(404);
+  expect((await res.json()).message).toBe('no Route matched with those values');
 });
 
 test('Kong rate limiting is active', async ({ request }) => {

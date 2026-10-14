@@ -26,7 +26,7 @@ The version is `1.63.0` because `1.64.0` (released 2026-10-07) is less than two 
 ## Boot
 
 - **Infrastructure** comes from `pnpm infra:up`, which already waits for health and is safe to re-run. Playwright does not manage Docker.
-- **Apps:** `webServer` has 5 entries. Each runs `pnpm --filter @tt/<name> dev`, which uses the package dir as cwd, so each service loads its own `.env`. The `.env` files come from the first-run `cp -n .env.example .env`.
+- **Apps:** `webServer` has 5 entries. Each runs `pnpm --dir <pkg dir> dev` (`../services/<name>`, `../apps/web`; `--filter` prints a recursive-run failure block on every SIGTERM shutdown, and one `ELIFECYCLE ... SIGTERM` line per server is still expected), which uses the package dir as cwd, so each service loads its own `.env`. The `.env` files come from the first-run `cp -n .env.example .env`.
   - **Services are ready** when `http://localhost:300x/health` returns 200. That only happens once the service's DB and Kafka are reachable.
   - **The web app is ready** when `http://localhost:5173` responds.
 - **`reuseExistingServer: !process.env.CI`:** locally, a running `pnpm dev` is reused.

@@ -7,11 +7,11 @@ const services = [
   ['reporting', 3004],
 ] as const;
 
-// --dir (not --filter) avoids pnpm's "recursive run" SIGTERM error noise on shutdown.
 // Infra (Postgres, Kafka, Redis, Kong) must already be up: `pnpm e2e` runs `infra:up` first.
 const server = (name: string, dir: string, url: string) => ({
   name,
-  // One "[ELIFECYCLE] ... signal SIGTERM" line per server on shutdown is expected, not a failure.
+  // --dir, not --filter: --filter prints a "recursive run" failure block on SIGTERM shutdown.
+  // One "[ELIFECYCLE] ... signal SIGTERM" line per server is still expected, not a failure.
   command: `pnpm --dir ${dir} dev`,
   url,
   reuseExistingServer: !process.env.CI,
