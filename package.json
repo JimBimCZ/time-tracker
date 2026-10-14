@@ -8,6 +8,7 @@
     "infra:down": "docker compose down",
     "dev": "pnpm -r --parallel dev",
     "typecheck": "pnpm -r typecheck",
+    "e2e": "pnpm infra:up && pnpm --filter @tt/e2e test",
     "lint": "eslint ."
   },
   "devDependencies": {
