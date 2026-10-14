@@ -127,4 +127,5 @@ All IDs are UUIDs and all timestamps are UTC. Catalog entities are archived (`ar
 - **No guessing.** If something is unknown, look it up in the code or docs, or ask. Don't invent APIs, file paths or requirements.
 - **Prove it before claiming it.** Back every claim ("this works", "this is the cause", "this is fixed") with evidence: command output, a reproduction or a file reference.
 - **No unit tests unless critical.** Write tests only for logic where a bug costs money or data, such as time totals, rounding and invoice aggregation.
+- **Keep docs current, in the same change.** Any decision that contradicts or extends CLAUDE.md must update CLAUDE.md. Any decision that affects the architecture must update `assets/system-design.md` (the Mermaid source and the "Key flows" section) and re-render `assets/system-design.png`.
 - **Brevity.** Keep code, comments and responses short. Don't add unrequested abstractions or features.
