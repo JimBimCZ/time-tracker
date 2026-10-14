@@ -11,6 +11,7 @@ const services = [
 // Infra (Postgres, Kafka, Redis, Kong) must already be up: `pnpm e2e` runs `infra:up` first.
 const server = (name: string, dir: string, url: string) => ({
   name,
+  // One "[ELIFECYCLE] ... signal SIGTERM" line per server on shutdown is expected, not a failure.
   command: `pnpm --dir ${dir} dev`,
   url,
   reuseExistingServer: !process.env.CI,
