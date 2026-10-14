@@ -26,6 +26,7 @@ This is a system-design exercise. It is deliberately overbuilt as scalable micro
 - Health through Kong: `curl localhost:8000/<auth|catalog|tracking|reporting>/health`
 - Checks: `pnpm typecheck`, `pnpm lint`
 - E2E smoke (boots infra, services and web; Chromium): `pnpm e2e`. First time: `pnpm --filter @tt/e2e exec playwright install chromium`.
+- CI (`.github/workflows/ci.yml`): jobs `checks` (typecheck, lint, build) and `e2e` (`pnpm e2e`) on every PR and push to `main`. Actions are pinned to commit SHAs.
 - Ports: services 3001–3004 (auth, catalog, tracking, reporting) · web 5173 · Kong 8000 · Postgres 5433–5436 · Kafka 9092 · Redis 6379
 - New dependencies: pin exact versions. pnpm fails install on unreviewed install scripts; decide each one in `allowBuilds` in `pnpm-workspace.yaml`.
 
