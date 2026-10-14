@@ -42,7 +42,7 @@ services/*/.env.example           per-service PORT, DATABASE_URL, KAFKA_BROKERS 
 | auth / catalog / tracking / reporting | 3001 / 3002 / 3003 / 3004 |
 | web (Vite) | 5173 |
 | Kong proxy | 8000 |
-| Kong admin API (read-only use; DB-less mode) | 8001 |
+| Kong admin API | off (`KONG_ADMIN_LISTEN: "off"`): config is file-mounted, and an unauthenticated admin API would let any local page rewrite routing |
 | Postgres auth / catalog / tracking / reporting | 5433 / 5434 / 5435 / 5436 |
 | Redis | 6379 |
 | Kafka (host listener) | 9092 |
