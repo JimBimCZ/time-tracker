@@ -1,3 +1,5 @@
+name: time-tracker
+
 x-pg-health: &pg-health
   interval: 5s
   timeout: 3s
