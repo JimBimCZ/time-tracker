@@ -10,7 +10,7 @@ try {
 export const env = z
   .object({
     PORT: z.coerce.number().int().positive(),
-    DATABASE_URL: z.string().startsWith('postgres://'),
+    DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//),
     KAFKA_BROKERS: z.string().min(1).transform((s) => s.split(',')),
   })
   .parse(process.env);

@@ -132,6 +132,11 @@ All IDs are UUIDs and all timestamps are UTC. Catalog entities are archived (`ar
   - Then record it: `git rev-parse HEAD > "$(git rev-parse --git-dir)/security-review-ok"`.
   - The hook in `.claude/hooks/require-security-review.sh` blocks any push whose HEAD isn't recorded. A new commit invalidates the recording.
 
+## Known gaps
+
+- Services listen on all interfaces (app.listen(PORT)), so ports 3001–3004 bypass Kong. Fix in the JWT/user_id step: bind via a HOST env var (127.0.0.1 on the host; 0.0.0.0 in containers).
+- packages/contracts is consumed from dist/ but nothing builds it. Fix in the first step that depends on @tt/contracts: build it before dev/typecheck, and use --filter @tt/<svc>... in Dockerfiles.
+
 ## Rules for agents
 
 - **No guessing.** If something is unknown, look it up in the code or docs, or ask. Don't invent APIs, file paths or requirements.
