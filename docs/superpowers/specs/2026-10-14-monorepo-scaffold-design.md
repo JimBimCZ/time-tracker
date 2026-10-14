@@ -29,7 +29,7 @@ packages/contracts/               zod event envelope schema + inferred TS type
 infra/kong/kong.yml               Kong declarative config (DB-less)
 docker-compose.yml                infrastructure only
 pnpm-workspace.yaml               apps/*, services/*, packages/*
-.env.example                      per-service PORT, DATABASE_URL, KAFKA_BROKERS
+services/*/.env.example           per-service PORT, DATABASE_URL, KAFKA_BROKERS (each service loads its own .env via process.loadEnvFile; names collide, so no root .env)
 .gitignore
 ```
 
@@ -42,12 +42,12 @@ pnpm-workspace.yaml               apps/*, services/*, packages/*
 | auth / catalog / tracking / reporting | 3001 / 3002 / 3003 / 3004 |
 | web (Vite) | 5173 |
 | Kong proxy | 8000 |
-| Kong admin API (read-only use; DB-less mode) | 8001, bound to 127.0.0.1 |
+| Kong admin API (read-only use; DB-less mode) | 8001 |
 | Postgres auth / catalog / tracking / reporting | 5433 / 5434 / 5435 / 5436 |
 | Redis | 6379 |
 | Kafka (host listener) | 9092 |
 
-Postgres starts at 5433 so it doesn't collide with a Postgres already running locally on 5432.
+Postgres starts at 5433 so it doesn't collide with a Postgres already running locally on 5432. Every published port is bound to `127.0.0.1` only. Dev credentials live in Compose and the `.env.example` files, and none are exposed beyond localhost.
 
 ## Services
 
@@ -78,7 +78,7 @@ Each route matches a service-name prefix with `strip_path: true`:
 ## Kafka
 
 - A single broker in KRaft mode (no ZooKeeper), with one listener for containers and one for the host.
-- A one-shot `kafka-init` container creates the topics:
+- A one-shot `kafka-init` container (Compose profile `init`, run by `docker compose run --rm kafka-init`, idempotent via `--if-not-exists`) creates the topics:
   - `user.events`, `catalog.events`, `timer.commands`, `timer.commands.dlq`, `tracking.events`
   - 6 partitions each, replication factor 1. The partition key is `user_id`.
 
@@ -86,18 +86,18 @@ Each route matches a service-name prefix with `strip_path: true`:
 
 | Script | Does |
 |---|---|
-| `pnpm infra:up` / `pnpm infra:down` | `docker compose up -d --wait` / `docker compose down` |
+| `pnpm infra:up` / `pnpm infra:down` | `docker compose up -d --wait && docker compose run --rm kafka-init` / `docker compose down` |
 | `pnpm dev` | runs every service and the web app in parallel (`pnpm -r --parallel dev`) |
 | `pnpm typecheck` | `tsc --noEmit` in every package |
-| `pnpm lint` | ESLint in every package |
+| `pnpm lint` | one root ESLint flat config over the whole repo |
 
 ## Versions
 
-Every dependency and image is pinned to an exact current stable version, checked against official docs or registries while writing the plan. None are guessed.
+Every dependency and image is pinned to an exact version: the newest stable release published at least two weeks earlier, i.e. before 2026-09-30, as checked against the npm registry and Docker Hub. TypeScript is 6.0.3, not 7.x, because `typescript-eslint` 8.71 supports TypeScript `<6.1`.
 
 ## Done when
 
-1. `pnpm install && pnpm infra:up` exits 0, and every container is healthy, with `kafka-init` exited 0.
+1. `pnpm install && pnpm infra:up` exits 0, every long-running container is healthy, and `kafka-init` exits 0.
 2. `pnpm dev` starts 4 services and the web app without errors.
 3. `curl -s localhost:8000/{auth,catalog,tracking,reporting}/health` → each returns `200 {"db":"ok","kafka":"ok"}`.
 4. Stopping one Postgres container makes that service's health return `503`.
