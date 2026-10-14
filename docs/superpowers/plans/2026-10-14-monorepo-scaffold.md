@@ -483,6 +483,8 @@ import { Pool } from 'pg';
 import { env } from './env';
 
 export const pool = new Pool({ connectionString: env.DATABASE_URL, connectionTimeoutMillis: 2000 });
+// Idle-client errors (e.g. DB restart) would otherwise crash the process; queries still reject and /health reports "down".
+pool.on('error', () => {});
 export const db = drizzle(pool);
 ```
 
